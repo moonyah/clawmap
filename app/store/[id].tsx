@@ -25,6 +25,7 @@ import { useFavorites } from "@/hooks/useFavorites";
 import { supabase } from "@/lib/supabase";
 import type { Review } from "@/types/review";
 import type { Store } from "@/types/store";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const CONTENT_HORIZONTAL_PADDING = 16;
@@ -35,6 +36,7 @@ type StoreDetail = Store & {
 };
 
 export default function StoreDetailScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -160,7 +162,10 @@ export default function StoreDetailScreen() {
 
       <ScrollView
         style={styles.container}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: Math.max(insets.bottom + 32, 80) },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {hasImage && (

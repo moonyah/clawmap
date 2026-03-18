@@ -16,11 +16,15 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 const DETAIL_MAX_LENGTH = 300;
 
 export default function ReportStoreScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
@@ -74,7 +78,10 @@ export default function ReportStoreScreen() {
           <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <ScrollView
               style={styles.flex}
-              contentContainerStyle={styles.content}
+              contentContainerStyle={[
+                styles.content,
+                { paddingBottom: Math.max(insets.bottom + 32, 80) },
+              ]}
               keyboardShouldPersistTaps="handled"
             >
               <Text style={styles.title}>매장 신고</Text>

@@ -16,7 +16,10 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
 
 import { supabase } from "@/lib/supabase";
 import { decode } from "base64-arraybuffer";
@@ -116,6 +119,7 @@ const REQUEST_TYPE_OPTIONS: {
 ];
 
 export default function SubmitStoreScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
 
   const [requestType, setRequestType] = useState<RequestType>("add");
@@ -286,7 +290,10 @@ export default function SubmitStoreScreen() {
         >
           <ScrollView
             style={styles.flex}
-            contentContainerStyle={styles.content}
+            contentContainerStyle={[
+              styles.content,
+              { paddingBottom: Math.max(insets.bottom + 32, 80) },
+            ]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >

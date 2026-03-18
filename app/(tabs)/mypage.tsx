@@ -130,7 +130,7 @@ export default function MyPageScreen() {
           </Text>
         </View>
 
-        <Pressable style={styles.card} onPress={handlePressContact}>
+        <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.iconWrap}>
               <Ionicons
@@ -143,11 +143,16 @@ export default function MyPageScreen() {
           </View>
           <View style={styles.rowBetween}>
             <Text style={styles.bodyInline}>오류 제보 및 의견 남기기</Text>
-            <Ionicons name="open-outline" size={18} color="#BBBBBB" />
+            <Pressable
+              onPress={handlePressContact}
+              style={styles.linkIconButton}
+            >
+              <Ionicons name="open-outline" size={18} color="#BBBBBB" />
+            </Pressable>
           </View>
-        </Pressable>
+        </View>
 
-        <Pressable style={styles.card} onPress={handlePressPrivacy}>
+        <View style={styles.card}>
           <View style={styles.cardHeader}>
             <View style={styles.iconWrap}>
               <Ionicons
@@ -160,9 +165,14 @@ export default function MyPageScreen() {
           </View>
           <View style={styles.rowBetween}>
             <Text style={styles.bodyInline}>개인정보 처리 방침 확인</Text>
-            <Ionicons name="open-outline" size={18} color="#BBBBBB" />
+            <Pressable
+              onPress={handlePressPrivacy}
+              style={styles.linkIconButton}
+            >
+              <Ionicons name="open-outline" size={18} color="#BBBBBB" />
+            </Pressable>
           </View>
-        </Pressable>
+        </View>
 
         <Text style={styles.version}>ClawMap v1.0</Text>
       </View>
@@ -180,6 +190,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
+    paddingBottom: 24,
   },
 
   title: {
@@ -193,8 +204,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FAFAFA",
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    padding: 10,
+    marginBottom: 8,
     borderWidth: 1,
     borderColor: "#EEEEEE",
   },
@@ -244,6 +255,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 8,
   },
 
   version: {
@@ -251,5 +263,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontSize: 13,
     color: "#999999",
+  },
+
+  linkIconButton: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
   },
 });

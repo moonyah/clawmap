@@ -25,6 +25,7 @@ import { createReview, uploadReviewImage } from "@/lib/api/reviews";
 import { getStoreById } from "@/lib/api/stores";
 import type { ReviewRecommend } from "@/types/review";
 import type { Store } from "@/types/store";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const NICKNAME_MIN_LENGTH = 2;
 const NICKNAME_MAX_LENGTH = 12;
@@ -33,6 +34,7 @@ const COMMENT_MAX_LENGTH = 300;
 const MAX_REVIEW_IMAGE_SIZE = 5 * 1024 * 1024; // 5MB
 
 export default function ReviewWriteScreen() {
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [store, setStore] = useState<Store | null>(null);
@@ -88,7 +90,7 @@ export default function ReviewWriteScreen() {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
-      allowsEditing: true,
+      allowsEditing: false,
       quality: 0.7,
     });
 
@@ -236,7 +238,10 @@ export default function ReviewWriteScreen() {
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView
           style={styles.container}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: Math.max(insets.bottom + 32, 80) },
+          ]}
           keyboardShouldPersistTaps="handled"
         >
           <Text style={styles.storeName}>{store.name}</Text>

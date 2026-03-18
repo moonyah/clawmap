@@ -6,7 +6,7 @@ import type { Store } from "@/types/store";
 import { getDistance } from "@/utils/distance";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   AppState,
   Image,
@@ -204,12 +204,6 @@ export default function HomeScreen() {
   }, [userLocation, stores]);
 
   useEffect(() => {
-    if (!userLocation || !nearestStore) return;
-
-    setIsCardVisible(false);
-  }, [userLocation, nearestStore]);
-
-  useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextState) => {
       if (nextState === "active") {
         fetchStores();
@@ -324,10 +318,43 @@ export default function HomeScreen() {
     );
   };
 
+  const markers = useMemo(() => {
+    return stores.map((store) => {
+      const latitude = Number(store.latitude);
+      const longitude = Number(store.longitude);
+
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude))
+        return null;
+
+      const isSelected = selectedStore?.id === store.id;
+
+      return (
+        <Marker
+          key={store.id}
+          coordinate={{ latitude, longitude }}
+          anchor={{ x: 0.5, y: 0.5 }}
+          onPress={(e) => {
+            e.stopPropagation();
+            focusOnStore(store);
+          }}
+        >
+          <Image
+            source={
+              isSelected
+                ? require("../../assets/padded-claw-selected2.png")
+                : require("../../assets/padded-claw2.png")
+            }
+            style={styles.markerImage}
+          />
+        </Marker>
+      );
+    });
+  }, [stores, selectedStore]);
+
   const nearestBadgeTop = 60;
   const permissionCardTop = 120;
 
-  const currentLocationButtonTop = userLocation ? 190 : 260;
+  const currentLocationButtonTop = userLocation ? 195 : 280;
 
   return (
     <View style={styles.container}>
@@ -387,7 +414,6 @@ export default function HomeScreen() {
       </View>
 
       <MapView
-        key={mapKey}
         ref={mapRef}
         style={styles.map}
         mapType="standard"
@@ -410,63 +436,27 @@ export default function HomeScreen() {
           // 🔥 1회 재마운트
           if (!didRemountMap) {
             setDidRemountMap(true);
-            setTimeout(() => {
-              setMapKey((prev) => prev + 1);
-            }, 200);
+            setTimeout(() => {}, 200);
           }
         }}
         onPress={() => {
           Keyboard.dismiss();
           setIsSearchFocused(false);
-          setIsCardVisible(false);
         }}
       >
-        {stores.map((store) => {
-          const latitude = Number(store.latitude);
-          const longitude = Number(store.longitude);
-
-          if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-            console.log("SKIP INVALID MARKER:", store);
-            return null;
-          }
-
-          const isSelected = selectedStore?.id === store.id;
-
-          return (
-            <Marker
-              key={store.id}
-              coordinate={{ latitude, longitude }}
-              onPress={(e) => {
-                e.stopPropagation();
-                focusOnStore(store);
-              }}
-            >
-              <View
-                style={[
-                  styles.markerWrapper,
-                  isSelected && styles.selectedMarkerWrapper,
-                ]}
-              >
-                <Image
-                  source={require("../../assets/claw.png")}
-                  style={[
-                    styles.markerImage,
-                    isSelected && styles.selectedMarkerImage,
-                  ]}
-                />
-              </View>
-            </Marker>
-          );
-        })}
+        {markers}
       </MapView>
 
       {userLocation ? (
-        <View style={[styles.nearestBadgeWrapper, { top: nearestBadgeTop }]}>
+        <Pressable
+          style={[styles.nearestBadgeWrapper, { top: nearestBadgeTop }]}
+          onPress={handleFocusNearestStore}
+        >
           <NearestBadge
             nearestStore={nearestStore}
             onPress={handleFocusNearestStore}
           />
-        </View>
+        </Pressable>
       ) : (
         <View
           style={[
@@ -525,34 +515,10 @@ const styles = StyleSheet.create({
     borderColor: "white",
   },
 
-  markerWrapper: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent",
-  },
-
-  selectedMarkerWrapper: {
-    borderWidth: 3,
-    borderColor: "#FF5A5F",
-    shadowColor: "#FF5A5F",
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 6,
-  },
-
   markerImage: {
     width: 42,
     height: 42,
     resizeMode: "contain",
-  },
-
-  selectedMarkerImage: {
-    width: 50,
-    height: 50,
   },
 
   searchContainer: {
@@ -745,8 +711,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "700",
     color: "#FFFFFF",
-  },
-  hiddenMap: {
-    opacity: 0,
   },
 });
