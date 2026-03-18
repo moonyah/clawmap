@@ -10,7 +10,7 @@ export default {
     newArchEnabled: true,
     ios: {
       supportsTablet: false,
-      bundleIdentifier: "com.anonymous.clawmap",
+      bundleIdentifier: "com.munyong.clawmap",
     },
     android: {
       adaptiveIcon: {
@@ -19,7 +19,7 @@ export default {
       },
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
-      package: "com.anonymous.clawmap",
+      package: "com.munyong.clawmap",
       config: {
         googleMaps: {
           apiKey: process.env.GOOGLE_MAPS_API_KEY,

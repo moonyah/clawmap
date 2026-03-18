@@ -45,6 +45,15 @@ export default function StoreDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 
+  const [reportingReviewId, setReportingReviewId] = useState<string | null>(
+    null,
+  );
+
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+  const [reportTargetReviewId, setReportTargetReviewId] = useState<
+    string | null
+  >(null);
+
   const fetchStore = useCallback(async () => {
     if (!id) {
       setStore(null);
@@ -80,6 +89,47 @@ export default function StoreDetailScreen() {
     setLoading(false);
   }, [id]);
 
+  const handleReportReview = (reviewId: string) => {
+    setReportTargetReviewId(reviewId);
+    setReportModalVisible(true);
+  };
+
+  const submitReviewReport = async (reviewId: string, reason: string) => {
+    try {
+      setReportingReviewId(reviewId);
+
+      const { error } = await supabase.from("review_reports").insert({
+        review_id: reviewId,
+        reason,
+      });
+
+      if (error) {
+        Alert.alert("신고 실패", "잠시 후 다시 시도해주세요.");
+        return;
+      }
+
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert("신고 완료", "신고가 접수되었습니다.");
+    } catch (error) {
+      Alert.alert("신고 실패", "잠시 후 다시 시도해주세요.");
+    } finally {
+      setReportingReviewId(null);
+    }
+  };
+
+  const closeReportModal = () => {
+    setReportModalVisible(false);
+    setReportTargetReviewId(null);
+  };
+
+  const handleSelectReportReason = async (reason: string) => {
+    if (!reportTargetReviewId) return;
+
+    setReportModalVisible(false);
+    await submitReviewReport(reportTargetReviewId, reason);
+    setReportTargetReviewId(null);
+  };
+
   const handleCopyAddress = async () => {
     if (!store?.address) return;
 
@@ -96,10 +146,13 @@ export default function StoreDetailScreen() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="small" color="#111111" />
-        <Text style={styles.loadingText}>매장 정보를 불러오는 중...</Text>
-      </View>
+      <>
+        <Stack.Screen options={{ title: "" }} />
+        <View style={styles.center}>
+          <ActivityIndicator size="small" color="#111111" />
+          <Text style={styles.loadingText}>매장 정보를 불러오는 중...</Text>
+        </View>
+      </>
     );
   }
 
@@ -132,7 +185,7 @@ export default function StoreDetailScreen() {
     <>
       <Stack.Screen
         options={{
-          title: store.name,
+          title: store?.name ?? "",
           headerBackVisible: false,
           headerLeft: () => (
             <Pressable
@@ -261,10 +314,28 @@ export default function StoreDetailScreen() {
           store.reviews.map((review) => (
             <View key={review.id} style={styles.reviewCard}>
               <View style={styles.reviewHeader}>
-                <Text style={styles.reviewNickname}>{review.nickname}</Text>
-                <Text style={styles.reviewDate}>
-                  {review.created_at.slice(0, 10)}
-                </Text>
+                <View style={styles.reviewHeaderLeft}>
+                  <Text style={styles.reviewNickname}>{review.nickname}</Text>
+                  <Text style={styles.reviewDate}>
+                    {review.created_at.slice(0, 10)}
+                  </Text>
+                </View>
+
+                <Pressable
+                  style={styles.reviewReportButton}
+                  onPress={() => handleReportReview(review.id)}
+                  disabled={reportingReviewId === review.id}
+                  hitSlop={8}
+                >
+                  {reportingReviewId === review.id ? (
+                    <ActivityIndicator size="small" color="#999999" />
+                  ) : (
+                    <>
+                      <Ionicons name="flag-outline" size={14} color="#999999" />
+                      <Text style={styles.reviewReportButtonText}>신고</Text>
+                    </>
+                  )}
+                </Pressable>
               </View>
 
               <Text style={styles.reviewComment}>{review.comment}</Text>
@@ -356,6 +427,54 @@ export default function StoreDetailScreen() {
               resizeMode="contain"
             />
           )}
+        </Pressable>
+      </Modal>
+      <Modal
+        visible={reportModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeReportModal}
+      >
+        <Pressable style={styles.reportModalOverlay} onPress={closeReportModal}>
+          <Pressable
+            style={styles.reportModalCard}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={styles.reportModalTitle}>리뷰 신고</Text>
+            <Text style={styles.reportModalDescription}>
+              신고 사유를 선택해주세요.
+            </Text>
+
+            <Pressable
+              style={styles.reportReasonButton}
+              onPress={() => handleSelectReportReason("스팸/광고")}
+            >
+              <Text style={styles.reportReasonButtonText}>스팸/광고</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.reportReasonButton}
+              onPress={() => handleSelectReportReason("욕설/부적절 표현")}
+            >
+              <Text style={styles.reportReasonButtonText}>
+                욕설/부적절 표현
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.reportReasonButton}
+              onPress={() => handleSelectReportReason("허위 정보")}
+            >
+              <Text style={styles.reportReasonButtonText}>허위 정보</Text>
+            </Pressable>
+
+            <Pressable
+              style={[styles.reportReasonButton, styles.reportCancelButton]}
+              onPress={closeReportModal}
+            >
+              <Text style={styles.reportCancelButtonText}>취소</Text>
+            </Pressable>
+          </Pressable>
         </Pressable>
       </Modal>
     </>
@@ -725,5 +844,79 @@ const styles = StyleSheet.create({
   imageModalImage: {
     width: "100%",
     height: "75%",
+  },
+  reviewHeaderLeft: {
+    flex: 1,
+  },
+
+  reviewReportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: "#F4F4F4",
+    marginLeft: 8,
+  },
+
+  reviewReportButtonText: {
+    fontSize: 12,
+    color: "#999999",
+    fontWeight: "600",
+  },
+  reportModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    justifyContent: "center",
+    paddingHorizontal: 24,
+  },
+
+  reportModalCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    padding: 20,
+  },
+
+  reportModalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#111111",
+    marginBottom: 8,
+  },
+
+  reportModalDescription: {
+    fontSize: 14,
+    color: "#666666",
+    marginBottom: 16,
+  },
+
+  reportReasonButton: {
+    minHeight: 48,
+    borderRadius: 12,
+    backgroundColor: "#F6F6F6",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+    paddingHorizontal: 16,
+  },
+
+  reportReasonButtonText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#222222",
+    textAlign: "center",
+  },
+
+  reportCancelButton: {
+    backgroundColor: "#FFF1F1",
+    marginBottom: 0,
+  },
+
+  reportCancelButtonText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#D05C5C",
+    textAlign: "center",
   },
 });
